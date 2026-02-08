@@ -64,17 +64,6 @@ Custom GPT → MCP Server → api.safecast.org
 ```
 
 **For Claude Desktop:**
-Add to config (`claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "safecast": {
-      "command": "node",
-      "args": ["path/to/safecast-mcp-server/nodejs/dist/index.js"]
-    }
-  }
-}
-```
 
 ---
 
