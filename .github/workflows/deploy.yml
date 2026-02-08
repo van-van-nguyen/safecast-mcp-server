@@ -1,0 +1,74 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'go/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go/go.mod
+
+      - name: Build
+        working-directory: go
+        run: GOOS=linux GOARCH=amd64 go build -o ../safecast-mcp ./cmd/mcp-server/
+
+      - name: Deploy to VPS
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          # Set up SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          SSH="ssh -i ~/.ssh/deploy_key root@$VPS_HOST"
+          SCP="scp -i ~/.ssh/deploy_key"
+
+          # Upload new binary
+          $SCP safecast-mcp "root@$VPS_HOST:/root/safecast-mcp-server/safecast-mcp-new"
+
+          # Stop old server, replace binary, start new server
+          $SSH "cd /root/safecast-mcp-server && \
+            fuser -k 3333/tcp 2>/dev/null; \
+            sleep 2; \
+            rm -f safecast-mcp && \
+            mv safecast-mcp-new safecast-mcp && \
+            chmod +x safecast-mcp && \
+            DATABASE_URL='$DATABASE_URL' \
+            MCP_BASE_URL=https://$VPS_HOST \
+            nohup ./safecast-mcp > /tmp/mcp-server.log 2>&1 &"
+
+          # Wait for server to start
+          sleep 3
+
+      - name: Health check
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"ci","version":"1.0"}}}' \
+            "https://$VPS_HOST/mcp-http" \
+            --max-time 10)
+          if [ "$RESPONSE" = "200" ]; then
+            echo "Health check passed (HTTP 200)"
+          else
+            echo "Health check failed (HTTP $RESPONSE)"
+            exit 1
+          fi

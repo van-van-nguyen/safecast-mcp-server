@@ -101,6 +101,51 @@ cd go
 GOOS=linux GOARCH=amd64 go build -o safecast-mcp ./cmd/mcp-server/
 ```
 
+## Deployment
+
+Pushing to `main` automatically builds and deploys to the VPS via GitHub Actions (only when files in `go/` change).
+
+### How it works
+
+1. GitHub Action cross-compiles the Go binary
+2. Uploads it to the VPS via SCP
+3. Restarts the MCP server
+4. Runs a health check against the `/mcp-http` endpoint
+
+### Setting up secrets
+
+The GitHub Action requires three repository secrets. Go to **Settings** > **Secrets and variables** > **Actions** and add:
+
+| Secret | Description |
+|--------|-------------|
+| `SSH_PRIVATE_KEY` | SSH private key with access to the VPS (ed25519 format) |
+| `VPS_HOST` | VPS hostname (e.g. `vps-01.safecast.jp`) |
+| `DATABASE_URL` | PostgreSQL connection string |
+
+To generate a deploy key:
+
+```bash
+ssh-keygen -t ed25519 -C "github-deploy@safecast-mcp" -f ~/.ssh/safecast-deploy -N ""
+```
+
+Then add the public key to the VPS:
+
+```bash
+ssh-copy-id -i ~/.ssh/safecast-deploy.pub root@vps-01.safecast.jp
+```
+
+And paste the contents of `~/.ssh/safecast-deploy` (the private key) as the `SSH_PRIVATE_KEY` secret in GitHub.
+
+### Manual deploy
+
+```bash
+cd go
+GOOS=linux GOARCH=amd64 go build -o safecast-mcp ./cmd/mcp-server/
+scp safecast-mcp root@vps-01.safecast.jp:/root/safecast-mcp-server/
+ssh root@vps-01.safecast.jp "cd /root/safecast-mcp-server && fuser -k 3333/tcp; sleep 2 && \
+  DATABASE_URL='...' MCP_BASE_URL=https://vps-01.safecast.jp nohup ./safecast-mcp > /tmp/mcp-server.log 2>&1 &"
+```
+
 ## Contributing
 
 Contributions welcome. If changing a tool's interface, please open an issue first. Fork, branch, PR.
