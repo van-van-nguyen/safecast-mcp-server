@@ -1,66 +1,111 @@
-# Safecast MCP Server (Go)
+# Safecast MCP Server
 
-Minimal Go-based MCP server using `mcp-go` with SSE transport.  
-Currently includes a simple `ping → pong` tool to validate MCP wiring.
+MCP server implementations for querying Safecast radiation data.
 
-## Prerequisites
+## Implementations
 
-- Go 1.21+
-- macOS / Linux
-- No other dependencies
+### 🚀 Node.js (Production Ready) ⭐
 
----
+Complete implementation with 7 tools and full Safecast API integration.
 
-## Run the server
+- **Status:** ✅ Production ready
+- **Tools:** 7/7 (100% complete)
+- **Transport:** stdio + SSE ready
+- **Location:** `nodejs/`
+- **[View Documentation →](nodejs/README.md)**
 
+**Quick Start:**
 ```bash
-git clone https://github.com/van-van-nguyen/safecast-mcp-server.git
-cd safecast-mcp-server
+cd nodejs
+npm install
+npm run build
+npm start
+```
+
+### 🔧 Go (Experimental)
+
+Basic MCP server skeleton with SSE transport.
+
+- **Status:** 🚧 Early development
+- **Tools:** 1/7 (ping only)
+- **Transport:** SSE
+- **Location:** `go/`
+- **[View Documentation →](go/README.md)**
+
+**Quick Start:**
+```bash
+cd go
 go run cmd/mcp-server/main.go
 ```
 
-You should see:
-Starting MCP SSE server on :3333
+---
 
-## Endpoints
+## Features
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/sse` | Opens an SSE stream, returns a session ID and message endpoint URL |
-| POST | `/message?sessionId=...` | Send MCP JSON-RPC messages (`initialize`, `tools/list`, `tools/call`) |
+Both implementations aim to provide:
 
-## Testing with curl
+1. ✅ **query_radiation** - Find measurements near a location
+2. ✅ **get_track** - Get measurements from a specific track
+3. ✅ **list_tracks** - Browse bGeigie Import tracks
+4. ✅ **get_spectrum** - Get gamma spectroscopy data
+5. ✅ **search_area** - Search within a bounding box
+6. ✅ **radiation_info** - Educational radiation reference
+7. ✅ **device_history** - Device measurement history
 
-1. Open the SSE stream in one terminal:
+| Feature | Node.js | Go |
+|---------|---------|-----|
+| All 7 tools | ✅ | 🚧 |
+| Safecast API | ✅ | 🚧 |
+| Production Ready | ✅ | 🚧 |
 
-```bash
-curl -N http://localhost:3333/sse
+---
+
+## Architecture
+
+```
+Custom GPT → MCP Server → api.safecast.org
 ```
 
-You'll receive an `endpoint` event with the message URL.
+- No database connection required
+- No authentication needed (public data)
+- Read-only queries
+- Results limited to ≤200 items per tool
 
-2. In another terminal, POST an MCP `initialize` request (replace the session ID):
+---
 
-```bash
-curl -X POST "http://localhost:3333/message?sessionId=<SESSION_ID>" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1.0"}}}'
+## Use Cases
+
+**For Custom GPT:**
+```
+"What are the radiation levels near Fukushima?"
+"Show me tracks recorded in Tokyo in 2024"
+"Explain radiation safety levels"
 ```
 
-3. List available tools:
-
-```bash
-curl -X POST "http://localhost:3333/message?sessionId=<SESSION_ID>" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+**For Claude Desktop:**
+Add to config (`claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "safecast": {
+      "command": "node",
+      "args": ["path/to/safecast-mcp-server/nodejs/dist/index.js"]
+    }
+  }
+}
 ```
 
-4. Call the `ping` tool:
+---
 
-```bash
-curl -X POST "http://localhost:3333/message?sessionId=<SESSION_ID>" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ping"}}'
-```
+## Contributing
 
-Responses are delivered via the SSE stream in terminal 1.
+See individual implementation directories for development instructions.
+
+Node.js: [nodejs/README.md](nodejs/README.md)
+Go: [go/README.md](go/README.md)
+
+---
+
+## License
+
+MIT
