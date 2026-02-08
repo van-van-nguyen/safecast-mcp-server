@@ -11,7 +11,7 @@ Basic MCP server skeleton with SSE transport.
 - **Tools:** 1/7 (ping only)
 - **Transport:** SSE/streaming HTTP
 - **Location:** `go/`
-- **[View Documentation →](go/README.md)**
+- **[View Documentation →](conversation-notes.md)**
 
 **Quick Start:**
 ```bash
