@@ -108,7 +108,7 @@ Pushing to `main` automatically builds and deploys to the VPS via GitHub Actions
 ### How it works
 
 1. GitHub Action cross-compiles the Go binary
-2. Uploads it to the VPS via SCP
+2. Uploads it to the VPS via rsync
 3. Restarts the MCP server
 4. Runs a health check against the `/mcp-http` endpoint
 
