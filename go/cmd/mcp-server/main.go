@@ -54,6 +54,7 @@ func main() {
 	}
 
 	// SSE transport (legacy, for existing clients)
+	// Note: baseURL should NOT include /mcp — WithStaticBasePath adds it
 	sseServer := server.NewSSEServer(mcpServer,
 		server.WithBaseURL(baseURL),
 		server.WithStaticBasePath("/mcp"),
