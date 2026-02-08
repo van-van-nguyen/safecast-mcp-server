@@ -30,10 +30,9 @@ func main() {
 
 	// Health check tool
 	mcpServer.AddTool(
-		mcp.Tool{
-			Name:        "ping",
-			Description: "Health check tool",
-		},
+		mcp.NewTool("ping",
+			mcp.WithDescription("Health check tool"),
+		),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			return mcp.NewToolResultText("pong"), nil
 		},
